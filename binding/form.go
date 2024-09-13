@@ -19,44 +19,64 @@ func (formBinding) Name() string {
 	return "form"
 }
 
-func (formBinding) Bind(req *http.Request, obj any) error {
-	if err := req.ParseForm(); err != nil {
-		return err
-	}
-	if err := req.ParseMultipartForm(defaultMemory); err != nil && !errors.Is(err, http.ErrNotMultipart) {
-		return err
-	}
-	if err := mapForm(obj, req.Form); err != nil {
+func (b formBinding) Bind(c context, obj any) error {
+	if err := b.mapping(c, obj); err != nil {
 		return err
 	}
 	return validate(obj)
+}
+
+func (formBinding) mapping(c context, obj any) error {
+	if err := c.GetRequest().ParseForm(); err != nil {
+		return err
+	}
+	if err := c.GetRequest().ParseMultipartForm(defaultMemory); err != nil && !errors.Is(err, http.ErrNotMultipart) {
+		return err
+	}
+	if err := mapForm(obj, c.GetRequest().Form); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (formPostBinding) Name() string {
 	return "form-urlencoded"
 }
 
-func (formPostBinding) Bind(req *http.Request, obj any) error {
-	if err := req.ParseForm(); err != nil {
-		return err
-	}
-	if err := mapForm(obj, req.PostForm); err != nil {
+func (f formPostBinding) Bind(c context, obj any) error {
+	if err := f.mapping(c, obj); err != nil {
 		return err
 	}
 	return validate(obj)
+}
+
+func (formPostBinding) mapping(c context, obj any) error {
+	if err := c.GetRequest().ParseForm(); err != nil {
+		return err
+	}
+	if err := mapForm(obj, c.GetRequest().PostForm); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (formMultipartBinding) Name() string {
 	return "multipart/form-data"
 }
 
-func (formMultipartBinding) Bind(req *http.Request, obj any) error {
-	if err := req.ParseMultipartForm(defaultMemory); err != nil {
+func (f formMultipartBinding) Bind(c context, obj any) error {
+	if err := f.mapping(c, obj); err != nil {
 		return err
 	}
-	if err := mappingByPtr(obj, (*multipartRequest)(req), "form"); err != nil {
-		return err
-	}
-
 	return validate(obj)
+}
+
+func (formMultipartBinding) mapping(c context, obj any) error {
+	if err := c.GetRequest().ParseMultipartForm(defaultMemory); err != nil {
+		return err
+	}
+	if err := mappingByPtr(obj, (*multipartRequest)(c.GetRequest()), "form"); err != nil {
+		return err
+	}
+	return nil
 }

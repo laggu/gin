@@ -395,9 +395,21 @@ func (c *Context) GetStringMapStringSlice(key string) (smss map[string][]string)
 	return
 }
 
+func (c *Context) GetRequest() *http.Request {
+	return c.Request
+}
+
 /************************************/
 /************ INPUT DATA ************/
 /************************************/
+
+func (c *Context) GetParams() map[string][]string {
+	m := make(map[string][]string, len(c.Params))
+	for _, v := range c.Params {
+		m[v.Key] = []string{v.Value}
+	}
+	return m
+}
 
 // Param returns the value of the URL param.
 // It is a shortcut for c.Params.ByName(key)
@@ -756,17 +768,17 @@ func (c *Context) ShouldBindHeader(obj any) error {
 
 // ShouldBindUri binds the passed struct pointer using the specified binding engine.
 func (c *Context) ShouldBindUri(obj any) error {
-	m := make(map[string][]string, len(c.Params))
-	for _, v := range c.Params {
-		m[v.Key] = []string{v.Value}
-	}
-	return binding.Uri.BindUri(m, obj)
+	return c.ShouldBindWith(obj, binding.Uri)
+}
+
+func (c *Context) ShouldBindUnite(obj any, b ...binding.Binding) error {
+	return c.ShouldBindWith(obj, binding.NewUniteBinding(b...))
 }
 
 // ShouldBindWith binds the passed struct pointer using the specified binding engine.
 // See the binding package.
 func (c *Context) ShouldBindWith(obj any, b binding.Binding) error {
-	return b.Bind(c.Request, obj)
+	return b.Bind(c, obj)
 }
 
 // ShouldBindBodyWith is similar with ShouldBindWith, but it stores the request

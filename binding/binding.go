@@ -25,12 +25,18 @@ const (
 	MIMETOML              = "application/toml"
 )
 
+type context interface {
+	GetRequest() *http.Request
+	GetParams() map[string][]string
+}
+
 // Binding describes the interface which needs to be implemented for binding the
 // data present in the request such as JSON request body, query parameters or
 // the form POST.
 type Binding interface {
 	Name() string
-	Bind(*http.Request, any) error
+	Bind(context, any) error
+	mapping(context, any) error
 }
 
 // BindingBody adds BindBody method to Binding. BindBody is similar with Bind,
@@ -38,13 +44,6 @@ type Binding interface {
 type BindingBody interface {
 	Binding
 	BindBody([]byte, any) error
-}
-
-// BindingUri adds BindUri method to Binding. BindUri is similar with Bind,
-// but it reads the Params.
-type BindingUri interface {
-	Name() string
-	BindUri(map[string][]string, any) error
 }
 
 // StructValidator is the minimal interface which needs to be implemented in
@@ -82,7 +81,7 @@ var (
 	ProtoBuf      BindingBody = protobufBinding{}
 	MsgPack       BindingBody = msgpackBinding{}
 	YAML          BindingBody = yamlBinding{}
-	Uri           BindingUri  = uriBinding{}
+	Uri           Binding     = uriBinding{}
 	Header        Binding     = headerBinding{}
 	Plain         BindingBody = plainBinding{}
 	TOML          BindingBody = tomlBinding{}

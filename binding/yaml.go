@@ -6,10 +6,8 @@ package binding
 
 import (
 	"bytes"
-	"io"
-	"net/http"
-
 	"gopkg.in/yaml.v3"
+	"io"
 )
 
 type yamlBinding struct{}
@@ -18,12 +16,22 @@ func (yamlBinding) Name() string {
 	return "yaml"
 }
 
-func (yamlBinding) Bind(req *http.Request, obj any) error {
-	return decodeYAML(req.Body, obj)
+func (b yamlBinding) Bind(c context, obj any) error {
+	if err := b.mapping(c, obj); err != nil {
+		return err
+	}
+	return validate(obj)
+}
+
+func (yamlBinding) mapping(c context, obj any) error {
+	return decodeYAML(c.GetRequest().Body, obj)
 }
 
 func (yamlBinding) BindBody(body []byte, obj any) error {
-	return decodeYAML(bytes.NewReader(body), obj)
+	if err := decodeYAML(bytes.NewReader(body), obj); err != nil {
+		return err
+	}
+	return validate(obj)
 }
 
 func decodeYAML(r io.Reader, obj any) error {
@@ -31,5 +39,5 @@ func decodeYAML(r io.Reader, obj any) error {
 	if err := decoder.Decode(obj); err != nil {
 		return err
 	}
-	return validate(obj)
+	return nil
 }

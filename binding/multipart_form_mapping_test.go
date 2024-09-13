@@ -27,7 +27,8 @@ func TestFormMultipartBindingBindOneFile(t *testing.T) {
 	file := testFile{"file", "file1", []byte("hello")}
 
 	req := createRequestMultipartFiles(t, file)
-	err := FormMultipart.Bind(req, &s)
+	c := testContext{req: req}
+	err := FormMultipart.Bind(c, &s)
 	require.NoError(t, err)
 
 	assertMultipartFileHeader(t, &s.FileValue, file)
@@ -53,7 +54,8 @@ func TestFormMultipartBindingBindTwoFiles(t *testing.T) {
 	}
 
 	req := createRequestMultipartFiles(t, files...)
-	err := FormMultipart.Bind(req, &s)
+	c := testContext{req: req}
+	err := FormMultipart.Bind(c, &s)
 	require.NoError(t, err)
 
 	assert.Len(t, s.SliceValues, len(files))
@@ -90,7 +92,8 @@ func TestFormMultipartBindingBindError(t *testing.T) {
 		}{}},
 	} {
 		req := createRequestMultipartFiles(t, files...)
-		err := FormMultipart.Bind(req, tt.s)
+		c := testContext{req: req}
+		err := FormMultipart.Bind(c, tt.s)
 		require.Error(t, err)
 	}
 }

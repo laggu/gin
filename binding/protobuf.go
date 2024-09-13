@@ -6,10 +6,8 @@ package binding
 
 import (
 	"errors"
-	"io"
-	"net/http"
-
 	"google.golang.org/protobuf/proto"
+	"io"
 )
 
 type protobufBinding struct{}
@@ -18,8 +16,12 @@ func (protobufBinding) Name() string {
 	return "protobuf"
 }
 
-func (b protobufBinding) Bind(req *http.Request, obj any) error {
-	buf, err := io.ReadAll(req.Body)
+func (b protobufBinding) Bind(c context, obj any) error {
+	return b.mapping(c, obj)
+}
+
+func (b protobufBinding) mapping(c context, obj any) error {
+	buf, err := io.ReadAll(c.GetRequest().Body)
 	if err != nil {
 		return err
 	}

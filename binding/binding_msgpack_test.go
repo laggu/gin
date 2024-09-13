@@ -41,14 +41,16 @@ func testMsgPackBodyBinding(t *testing.T, b Binding, name, path, badPath, body, 
 	obj := FooStruct{}
 	req := requestWithBody("POST", path, body)
 	req.Header.Add("Content-Type", MIMEMSGPACK)
-	err := b.Bind(req, &obj)
+	c := testContext{req: req}
+	err := b.Bind(c, &obj)
 	require.NoError(t, err)
 	assert.Equal(t, "bar", obj.Foo)
 
 	obj = FooStruct{}
 	req = requestWithBody("POST", badPath, badBody)
+	c = testContext{req: req}
 	req.Header.Add("Content-Type", MIMEMSGPACK)
-	err = MsgPack.Bind(req, &obj)
+	err = MsgPack.Bind(c, &obj)
 	require.Error(t, err)
 }
 

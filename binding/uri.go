@@ -10,9 +10,14 @@ func (uriBinding) Name() string {
 	return "uri"
 }
 
-func (uriBinding) BindUri(m map[string][]string, obj any) error {
-	if err := mapURI(obj, m); err != nil {
+func (b uriBinding) Bind(c context, obj interface{}) error {
+	err := b.mapping(c, obj)
+	if err != nil {
 		return err
 	}
 	return validate(obj)
+}
+
+func (uriBinding) mapping(c context, obj any) error {
+	return mapURI(obj, c.GetParams())
 }

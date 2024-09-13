@@ -7,10 +7,8 @@ package binding
 import (
 	"bytes"
 	"errors"
-	"io"
-	"net/http"
-
 	"github.com/gin-gonic/gin/internal/json"
+	"io"
 )
 
 // EnableDecoderUseNumber is used to call the UseNumber method on the JSON
@@ -30,15 +28,26 @@ func (jsonBinding) Name() string {
 	return "json"
 }
 
-func (jsonBinding) Bind(req *http.Request, obj any) error {
-	if req == nil || req.Body == nil {
+func (b jsonBinding) Bind(c context, obj any) error {
+	if c == nil || c.GetRequest().Body == nil {
 		return errors.New("invalid request")
 	}
-	return decodeJSON(req.Body, obj)
+
+	if err := b.mapping(c, obj); err != nil {
+		return err
+	}
+	return validate(obj)
+}
+
+func (jsonBinding) mapping(c context, obj any) error {
+	return decodeJSON(c.GetRequest().Body, obj)
 }
 
 func (jsonBinding) BindBody(body []byte, obj any) error {
-	return decodeJSON(bytes.NewReader(body), obj)
+	if err := decodeJSON(bytes.NewReader(body), obj); err != nil {
+		return err
+	}
+	return validate(obj)
 }
 
 func decodeJSON(r io.Reader, obj any) error {
@@ -52,5 +61,5 @@ func decodeJSON(r io.Reader, obj any) error {
 	if err := decoder.Decode(obj); err != nil {
 		return err
 	}
-	return validate(obj)
+	return nil
 }

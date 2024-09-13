@@ -1825,6 +1825,29 @@ func TestContextBadAutoBind(t *testing.T) {
 	assert.True(t, c.IsAborted())
 }
 
+func TestContextAutoShouldBindUnite(t *testing.T) {
+	c, _ := CreateTestContext(httptest.NewRecorder())
+	c.Request, _ = http.NewRequest("POST", "/?size=100", bytes.NewBufferString("{\"foo\":\"bar\", \"bar\":\"foo\"}"))
+	c.Request.Header.Add("Content-Type", MIMEJSON)
+	c.Params = make(Params, 0, 1)
+	c.AddParam("id", "10")
+
+	var obj struct {
+		Foo         string `json:"foo"`
+		Bar         string `json:"bar"`
+		ContentType string `header:"Content-Type"`
+		Id          string `uri:"id"`
+		Size        string `form:"size"`
+	}
+	require.NoError(t, c.ShouldBindUnite(&obj, binding.Header, binding.Uri, binding.Query, binding.JSON))
+	assert.Equal(t, "foo", obj.Bar)
+	assert.Equal(t, "bar", obj.Foo)
+	assert.Equal(t, MIMEJSON, obj.ContentType)
+	assert.Equal(t, "10", obj.Id)
+	assert.Equal(t, "100", obj.Size)
+	assert.Empty(t, c.Errors)
+}
+
 func TestContextAutoShouldBindJSON(t *testing.T) {
 	c, _ := CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("POST", "/", bytes.NewBufferString("{\"foo\":\"bar\", \"bar\":\"foo\"}"))

@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
-	"net/http"
 )
 
 type xmlBinding struct{}
@@ -17,17 +16,28 @@ func (xmlBinding) Name() string {
 	return "xml"
 }
 
-func (xmlBinding) Bind(req *http.Request, obj any) error {
-	return decodeXML(req.Body, obj)
+func (b xmlBinding) Bind(c context, obj any) error {
+	if err := b.mapping(c, obj); err != nil {
+		return err
+	}
+	return validate(obj)
+}
+
+func (xmlBinding) mapping(c context, obj any) error {
+	return decodeXML(c.GetRequest().Body, obj)
 }
 
 func (xmlBinding) BindBody(body []byte, obj any) error {
-	return decodeXML(bytes.NewReader(body), obj)
+	if err := decodeXML(bytes.NewReader(body), obj); err != nil {
+		return err
+	}
+	return validate(obj)
 }
+
 func decodeXML(r io.Reader, obj any) error {
 	decoder := xml.NewDecoder(r)
 	if err := decoder.Decode(obj); err != nil {
 		return err
 	}
-	return validate(obj)
+	return nil
 }

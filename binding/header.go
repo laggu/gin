@@ -5,7 +5,6 @@
 package binding
 
 import (
-	"net/http"
 	"net/textproto"
 	"reflect"
 )
@@ -16,13 +15,18 @@ func (headerBinding) Name() string {
 	return "header"
 }
 
-func (headerBinding) Bind(req *http.Request, obj any) error {
-
-	if err := mapHeader(obj, req.Header); err != nil {
+func (b headerBinding) Bind(c context, obj any) error {
+	if err := b.mapping(c, obj); err != nil {
 		return err
 	}
-
 	return validate(obj)
+}
+
+func (headerBinding) mapping(c context, obj any) error {
+	if err := mapHeader(obj, c.GetRequest().Header); err != nil {
+		return err
+	}
+	return nil
 }
 
 func mapHeader(ptr any, h map[string][]string) error {

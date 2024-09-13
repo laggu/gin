@@ -6,10 +6,8 @@ package binding
 
 import (
 	"bytes"
-	"io"
-	"net/http"
-
 	"github.com/pelletier/go-toml/v2"
+	"io"
 )
 
 type tomlBinding struct{}
@@ -18,8 +16,12 @@ func (tomlBinding) Name() string {
 	return "toml"
 }
 
-func (tomlBinding) Bind(req *http.Request, obj any) error {
-	return decodeToml(req.Body, obj)
+func (b tomlBinding) Bind(c context, obj any) error {
+	return b.mapping(c, obj)
+}
+
+func (tomlBinding) mapping(c context, obj any) error {
+	return decodeToml(c.GetRequest().Body, obj)
 }
 
 func (tomlBinding) BindBody(body []byte, obj any) error {

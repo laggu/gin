@@ -3,7 +3,6 @@ package binding
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"reflect"
 
 	"github.com/gin-gonic/gin/internal/bytesconv"
@@ -15,8 +14,12 @@ func (plainBinding) Name() string {
 	return "plain"
 }
 
-func (plainBinding) Bind(req *http.Request, obj interface{}) error {
-	all, err := io.ReadAll(req.Body)
+func (b plainBinding) Bind(c context, obj interface{}) error {
+	return b.mapping(c, obj)
+}
+
+func (plainBinding) mapping(c context, obj interface{}) error {
+	all, err := io.ReadAll(c.GetRequest().Body)
 	if err != nil {
 		return err
 	}

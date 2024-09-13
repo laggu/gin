@@ -8,10 +8,8 @@ package binding
 
 import (
 	"bytes"
-	"io"
-	"net/http"
-
 	"github.com/ugorji/go/codec"
+	"io"
 )
 
 type msgpackBinding struct{}
@@ -20,12 +18,22 @@ func (msgpackBinding) Name() string {
 	return "msgpack"
 }
 
-func (msgpackBinding) Bind(req *http.Request, obj any) error {
-	return decodeMsgPack(req.Body, obj)
+func (b msgpackBinding) Bind(c context, obj any) error {
+	if err := b.mapping(c, obj); err != nil {
+		return err
+	}
+	return validate(obj)
+}
+
+func (msgpackBinding) mapping(c context, obj any) error {
+	return decodeMsgPack(c.GetRequest().Body, obj)
 }
 
 func (msgpackBinding) BindBody(body []byte, obj any) error {
-	return decodeMsgPack(bytes.NewReader(body), obj)
+	if err := decodeMsgPack(bytes.NewReader(body), obj); err != nil {
+		return err
+	}
+	return validate(obj)
 }
 
 func decodeMsgPack(r io.Reader, obj any) error {
@@ -33,5 +41,5 @@ func decodeMsgPack(r io.Reader, obj any) error {
 	if err := codec.NewDecoder(r, cdc).Decode(&obj); err != nil {
 		return err
 	}
-	return validate(obj)
+	return nil
 }
